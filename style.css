@@ -43,46 +43,54 @@ body.dark-mode {
   font-size: 1.7em; font-weight: 700; color: #244e86;
 }
 
-/* Navigation Bar --- adjust padding for overall navbar height */
+/* Sticky header stays at the top as user scrolls */
+.header {
+  position: sticky; top: 0; z-index: 10;
+  background: #f4f7fa;
+}
+
+/* Flexbox for logo, site name, and space management */
+.logo-area {
+  display: flex;
+  align-items: center;
+  gap: 0.7em;
+  padding-bottom: 0.7em;
+}
+.logo { 
+  font-size: 2.3em; background: #244e86; color: #fff;
+  border-radius: 50%; width: 2em; height: 2em;
+  display: flex; align-items: center; justify-content: center;
+}
+.sitename {
+  font-family: 'Montserrat', sans-serif; /* Headline font */
+  font-size: 1.7em; font-weight: 700; color: #244e86;
+}
+
+/* Navigation Bar */
 .navbar {
   background: #244e86;
-  padding: 1.2em 4vw;                 /* Increase top/bottom for taller navbar */
+  padding: 0.5em 5em;
   position: sticky; top: 0; z-index: 9;
-  display: flex; align-items: center; justify-content: space-between;
+  display: flex; align-items: center; gap: 1.5em;
 }
 
-/* Tabs Row --- adjust gap for tab spacing */
+/* Tab navigation using buttons for accessibility */
 .tabs {
-  display: flex;
-  gap: 1.3em;                        /* More horizontal space between buttons */
-  margin-bottom: 0;                   /* Remove extra margin if unwanted */
+  display: flex; gap: 0.5em; margin-bottom: 1em;
 }
-
-/* Tab navigation buttons --- adjust font size, padding, width */
 .tab-btn {
-  font-weight: 700;                   /* Bolder for better visibility */
-  font-size: 1.15em;                  /* Make text bigger */
+  font-weight: 600;
   border: none;
-  border-radius: 8px 8px 0 0;         /* Slightly more rounded */
-  background: #fff;
-  color: #244e86;
-  padding: 0.7em 2em;                 /* More padding for chunky/tall buttons */
-  min-width: 125px;                   /* Minimum width per tab for neat alignment */
+  border-radius: 5px 5px 0 0;
+  background: #fff; color: #244e86;
+  padding: 0.6em 1.2em;
   cursor: pointer;
   box-shadow: 0 1px 4px #0001;
   transition: background 0.2s, color 0.2s;
-  text-align: center;
 }
 .tab-btn.active, .tab-btn:focus {
-  background: #244e86;
-  color: #fff;
+  background: #244e86; color: #fff;
   outline: none;
-}
-
-/* Dark mode toggle also bigger for consistency */
-.dark-toggle-btn {
-  font-size: 1.1em;
-  padding: 0.7em 1.7em;
 }
 
 .navbar {
