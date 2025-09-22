@@ -6,46 +6,55 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <!-- MAIN STYLESHEET: Contains all site CSS -->
   <link rel="stylesheet" href="style.css" />
-  <!-- Google Fonts for consistent pairing -->
+  <!-- Google Fonts for consistent font pairing, for headings and text  -->
   <link href="https://fonts.googleapis.com/css?family=Montserrat:700|Roboto:400,500&display=swap" rel="stylesheet">
   <!-- Favicon for browser tabs -->
   <link rel="icon" href="favicon.ico" type="image/x-icon" />
-  <!-- PWA manifest -->
+  <!-- Progressive Web App manifest for installability and splash screen -->
   <link rel="manifest" href="manifest.json">
-  <!-- SEO Metadata -->
+  <!-- SEO Metadata for better discoverability in Google and social sharing -->
   <meta name="description" content="Latest Indian legal news—Supreme Court, High Courts, rapid legal updates and expert analysis" />
   <meta property="og:title" content="LegalNewsIndia - Law News" />
   <meta property="og:description" content="Get instant updates from Supreme and High Courts, Indian legal news, judgments, and analysis." />
   <meta property="og:type" content="website" />
   <meta property="og:image" content="favicon.png" />
+  <!-- Supabase Client Library for database integration -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
-  <!-- HEADER: logo, title, sticky nav, dark mode toggle -->
+  <!-- ================= HEADER & NAVIGATION ================ -->
   <header class="header" aria-label="Site header">
     <div class="logo-area">
       <span class="logo" aria-label="Scales of justice icon">⚖️</span>
       <h1 class="sitename">LegalNewsIndia</h1>
     </div>
+    <!-- Main navigation tabs for different news groups -->
     <nav class="navbar" aria-label="Main navigation">
-      <ul>
-        <li><a href="#" class="nav-link" data-section="all"><i class="icon">🏠</i> Home</a></li>
-        <li><a href="#" class="nav-link" data-section="supreme"><i class="icon">⚖️</i> Supreme Court</a></li>
-        <li><a href="#" class="nav-link" data-section="high"><i class="icon">💼</i> High Courts</a></li>
-        <li><a href="#" class="nav-link" data-section="other"><i class="icon">📝</i> Other</a></li>
-        <li><button class="dark-toggle-btn" id="darkToggleBtn" aria-label="Toggle dark mode">Dark Mode</button></li>
-      </ul>
+      <div class="tabs" id="categoryTabs" aria-label="News category selection tabs">
+        <button class="tab-btn active" data-category="all" aria-label="Show all news">All</button>
+        <button class="tab-btn" data-category="supreme" aria-label="Show Supreme Court news">Supreme Court</button>
+        <button class="tab-btn" data-category="high" aria-label="Show High Court news">High Court</button>
+        <button class="tab-btn" data-category="other" aria-label="Show other court news">Other</button>
+      </div>
+      <!-- Dark mode toggle for accessibility and user preference -->
+      <button class="dark-toggle-btn" id="darkToggleBtn" aria-label="Toggle dark mode">Dark Mode</button>
     </nav>
+    <!-- High Court sub-tabs, display only when High Court active -->
+    <div class="hc-tabs" id="highCourtTabs" style="display:none" aria-label="High Court filter tabs"></div>
   </header>
-  <!-- SEARCH BAR -->
-  <input type="text" id="searchBar" placeholder="Search legal news or date (YYYY-MM-DD)..." aria-label="Search bar for legal news" />
-  <!-- STATUS & FEATURED STORIES CAROUSEL -->
+  <!-- ==================== SEARCH & STATUS ================ -->
+  <!-- Search bar for instant filtering by keyword or date -->
+  <input type="text" id="searchBar" placeholder="Search news by keywords or date (YYYY-MM-DD)..." autocomplete="off" aria-label="Search bar for legal news"/>
+  <!-- Status message for database or fetch errors -->
   <div id="statusMsg" aria-live="polite"></div>
+  <!-- Carousel for displaying top, featured, or breaking stories -->
   <div id="top-carousel" aria-label="Highlighted stories carousel"></div>
-  <!-- NEWS LIST -->
+  <!-- ====================== MAIN CONTENT ================== -->
   <main>
+    <!-- News list container; filled dynamically by JS -->
     <section id="law-news" aria-label="News articles list">Loading news...</section>
   </main>
-  <!-- MAIN JAVASCRIPT LOGIC -->
+  <!-- ==================== APP & LOGIC ==================== -->
   <script src="app.js"></script>
 </body>
 </html>
