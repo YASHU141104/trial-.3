@@ -262,25 +262,37 @@ function renderGroupedNews(news) {
   /**
    * Helper: Render HTML for one section
    */
-  function renderSection(title, group) {
-    if (!group.length) return "";
-    let html = `<h2>${title}</h2>`;
-    group.forEach((item) => {
-      const img = getImg(item);
-      // Badge for breaking news
-      const breakingMark = isBreaking(item) ? '<span class="badge">Breaking</span>' : '';
-      html += `<div class="news-card${isBreaking(item) ? ' breaking' : ''}">
-        ${breakingMark}
-        ${img ? `<img class="news-img" src="${img}" loading="lazy" alt="news photo">` : ""}
-        <div class="news-content">
-          <a href="${item.link}" target="_blank">${item.title}</a>
-          <div style="font-size:0.85em; color:#666;">${formatPubDate(item.pubdate)}</div>
-          <div class="desc">${cleanDesc(item.description || item.content || "")}</div>
-        </div>
-      </div>`;
-    });
-    return html;
-  }
+function renderSection(title, group) {
+  if (!group.length) return "";
+  let html = `<h2>${title}</h2>`;
+
+  // --- Find the latest news item by pubdate in this group ---
+  const latestNews = group.reduce((latest, item) => {
+    if (!latest) return item;
+    // Compare by actual date and time
+    if (new Date(item.pubdate) > new Date(latest.pubdate)) return item;
+    return latest;
+  }, null);
+
+  // --- Render cards, only the news with latest pubdate gets 'Breaking' badge ---
+  group.forEach((item) => {
+    const img = getImg(item);
+    // Only the truly latest article in this group gets "Breaking"
+    const isBreaking = (latestNews && item.link === latestNews.link);
+    const breakingMark = isBreaking ? '<span class="badge">Breaking</span>' : '';
+    html += `<div class="news-card${isBreaking ? ' breaking' : ''}">
+      ${breakingMark}
+      ${img ? `<img class="news-img" src="${img}" loading="lazy" alt="news photo">` : ""}
+      <div class="news-content">
+        <a href="${item.link}" target="_blank">${item.title}</a>
+        <div style="font-size:0.85em; color:#666;">${formatPubDate(item.pubdate)}</div>
+        <div class="desc">${cleanDesc(item.description || item.content || "")}</div>
+      </div>
+    </div>`;
+  });
+
+  return html;
+}
 
   // Which groups to render based on tab
   let html = '';
