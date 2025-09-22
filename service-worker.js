@@ -1,24 +1,43 @@
+// service-worker.js
+// ============================
+// Service Worker for PWA/offline support
+// Caches core files for offline availability and improves load speed
 
-// Service worker for offline support (PWA)
-// Caches core files for offline access
+const CACHE_NAME = 'lni-cache-v1'; // Change version to force cache update
+const CACHE_FILES = [
+  '/',                 // Root
+  '/index.html',
+  '/style.css',
+  '/app.js',
+  // Add more as needed (e.g., images, manifest) for full offline experience
+];
 
-self.addEventListener('install', (event) => {
+// Install event: cache all core files
+self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open('lni-cache-v1').then((cache) => {
-      return cache.addAll([
-        '/', 
-        '/index.html', 
-        '/style.css', 
-        '/app.js'
-      ]);
+    caches.open(CACHE_NAME).then(cache => {
+      return cache.addAll(CACHE_FILES);
     })
   );
 });
 
-self.addEventListener('fetch', (event) => {
+// Fetch event: serve from cache if available, else fetch from network
+self.addEventListener('fetch', event => {
   event.respondWith(
-    caches.match(event.request).then((response) => 
+    caches.match(event.request).then(response =>
       response || fetch(event.request)
+    )
+  );
+});
+
+// Activate event: Clean up old caches if any
+self.addEventListener('activate', event => {
+  event.waitUntil(
+    caches.keys().then(keys =>
+      Promise.all(
+        keys.filter(key => key !== CACHE_NAME)
+            .map(key => caches.delete(key))
+      )
     )
   );
 });
