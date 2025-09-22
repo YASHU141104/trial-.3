@@ -46,14 +46,14 @@ body.dark-mode {
 /* Navigation Bar */
 .navbar {
   background: #244e86;
-  padding: 0.5em 1em;
+  padding: 0.5em 5em;
   position: sticky; top: 0; z-index: 9;
   display: flex; align-items: center; gap: 1.5em;
 }
 
 /* Tab navigation using buttons for accessibility */
 .tabs {
-  display: flex; gap: 0.5em; margin-bottom: 0.7em;
+  display: flex; gap: 0.5em; margin-bottom: 1em;
 }
 .tab-btn {
   font-weight: 600;
