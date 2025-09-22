@@ -1,23 +1,14 @@
 /* ===============================
    DARK MODE LOGIC
    =============================== */
-// Get dark mode button
 const darkBtn = document.getElementById("darkToggleBtn");
 
-/**
- * Enable or disable dark mode, also set localStorage for preference
- * @param {boolean} state - true for dark, false for light
- */
 function setDarkMode(state) {
   document.body.classList.toggle("dark-mode", state);
   localStorage.setItem("dark-mode", state ? "1" : "");
   darkBtn.textContent = state ? "Light Mode" : "Dark Mode";
 }
-
-// Toggle dark mode on button click
 darkBtn.onclick = () => setDarkMode(!document.body.classList.contains("dark-mode"));
-
-// On page load, restore user's dark mode preference from localStorage
 (() => {
   if (localStorage.getItem("dark-mode")) setDarkMode(true);
 })();
@@ -25,8 +16,6 @@ darkBtn.onclick = () => setDarkMode(!document.body.classList.contains("dark-mode
 /* ===============================
    TABS & CATEGORY HANDLING
    =============================== */
-
-// List of Indian High Courts for filtering
 const highCourtList = [
   { name: "Allahabad High Court" }, { name: "Andhra Pradesh High Court" }, { name: "Bombay High Court" },
   { name: "Calcutta High Court" }, { name: "Chhattisgarh High Court" }, { name: "Delhi High Court" },
@@ -38,15 +27,8 @@ const highCourtList = [
   { name: "Rajasthan High Court" }, { name: "Sikkim High Court" }, { name: "Telangana High Court" },
   { name: "Tripura High Court" }, { name: "Uttarakhand High Court" }
 ];
-
-// Track selected tab/category (all/supreme/high/other) and High Court filter
 let selectedTab = "all";
 let selectedHC = null;
-
-/**
- * Set active tab/category and optionally High Court filter
- * Rerenders relevant tabs and news
- */
 function setTab(cat, hcName = null) {
   selectedTab = cat;
   selectedHC = cat === "high" ? hcName : null;
@@ -54,11 +36,6 @@ function setTab(cat, hcName = null) {
   renderHighCourtTabs(cat === "high" ? hcName : null);
   renderApp();
 }
-
-/**
- * Render High Court sub-tabs (only when "High Court" tab is active)
- * Allows users to filter by individual high courts
- */
 function renderHighCourtTabs(active = null) {
   const hctabs = document.getElementById("highCourtTabs");
   if (selectedTab !== "high") { hctabs.style.display = "none"; return; }
@@ -74,8 +51,6 @@ function renderHighCourtTabs(active = null) {
     }
   );
 }
-
-// Add event listeners to top category tabs/buttons
 document.getElementById("categoryTabs").querySelectorAll(".tab-btn").forEach(btn =>
   btn.onclick = () => setTab(btn.dataset.category)
 );
@@ -83,13 +58,9 @@ document.getElementById("categoryTabs").querySelectorAll(".tab-btn").forEach(btn
 /* ===============================
    DATA FETCHING & APP LOGIC
    =============================== */
-
-// Supabase Configuration
 const supabase_url = "https://xddssiompemprjbnxxlf.supabase.co";
 const supabase_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhkZHNzaW9tcGVtcHJqYm54eGxmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgyMDczNzcsImV4cCI6MjA3Mzc4MzM3N30.QHjF8xdFYp6ex1YW2XV6GkKvPZXNp1biImoQIZdSMG4";
 const supabase = window.supabase.createClient(supabase_url, supabase_key);
-
-// List of legal news RSS feeds
 const feeds = [
   { url: "https://www.barandbench.com/feed" },
   { url: "https://www.livelaw.in/rss/law" },
@@ -99,34 +70,20 @@ const feeds = [
   { url: "https://www.latestlaws.com/feed/" }
 ];
 const rss2json = (url) => `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(url)}`;
+let allNews = [];
+let currentSearch = "";
 
-let allNews = [];      // List of all articles fetched/loaded
-let currentSearch = ""; // Current value from search input
-
-/**
- * Set status message for user feedback (centered above carousel)
- */
 function setStatus(msg) {
   document.getElementById("statusMsg").textContent = msg || "";
 }
-
-/**
- * Clean and truncate article description text
- */
 function cleanDesc(desc) {
   if (!desc) return "";
   const text = desc.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
   return text.length > 180 ? text.slice(0, 180) + "..." : text;
 }
-/**
- * Returns image URL for a news item, if any
- */
 function getImg(item) {
   return item.thumbnail || (item.enclosure && item.enclosure.link) || "";
 }
-/**
- * Filter news to just this week's stories (used for carousel and main filter)
- */
 function getWeekStories(news) {
   const now = new Date();
   const sevenDaysAgo = new Date(now);
@@ -139,18 +96,11 @@ function getWeekStories(news) {
     return d >= startDate && d < endDate;
   });
 }
-/**
- * Format publication date for display
- */
 function formatPubDate(pubdate) {
   if (!pubdate) return "";
   let d = new Date(pubdate);
   return d.toLocaleString();
 }
-
-/**
- * Renders featured top stories carousel
- */
 function renderTopCarousel(topStories) {
   const container = document.getElementById("top-carousel");
   if (!topStories || !topStories.length) {
@@ -182,7 +132,6 @@ function renderTopCarousel(topStories) {
     `;
   }
   showSlide(slideIdx);
-  // Cycle if multiple top stories available
   if (topStories.length > 1) {
     setInterval(() => {
       slideIdx = (slideIdx + 1) % topStories.length;
@@ -190,15 +139,8 @@ function renderTopCarousel(topStories) {
     }, 50000);
   }
 }
-
-/**
- * Main news filter logic, supports tab selection and instant search
- */
 function filterNews(all, searchStr) {
-  // 1. Only keep this week's news
   let weekNews = getWeekStories(all);
-
-  // 2. Tabs: by category & High Court
   let filtered = weekNews;
   if (selectedTab === "supreme") {
     filtered = filtered.filter(item =>
@@ -221,7 +163,6 @@ function filterNews(all, searchStr) {
       !(item.title || "").toLowerCase().includes("supreme court")
     );
   }
-  // 3. Search by date or keyword
   if (searchStr) {
     if (/^\d{4}-\d{2}-\d{2}$/.test(searchStr)) {
       filtered = filtered.filter((item) => {
@@ -238,14 +179,9 @@ function filterNews(all, searchStr) {
       );
     }
   }
-  // Sort newest first
   return filtered.sort((a, b) => new Date(b.pubdate) - new Date(a.pubdate));
 }
 
-/**
- * Renders grouped news (by Supreme/High/Other) depending on filters/tabs
- * Uses HTML5 semantic sections
- */
 function renderGroupedNews(news) {
   let articles = [], supreme_court_cases = [], high_court_cases = [];
   news.forEach((item) => {
@@ -259,42 +195,36 @@ function renderGroupedNews(news) {
     }
   });
 
-  /**
-   * Helper: Render HTML for one section
-   */
-function renderSection(title, group) {
-  if (!group.length) return "";
-  let html = `<h2>${title}</h2>`;
+  function renderSection(title, group) {
+    if (!group.length) return "";
+    let html = `<h2>${title}</h2>`;
 
-  // --- Find the latest news item by pubdate in this group ---
-  const latestNews = group.reduce((latest, item) => {
-    if (!latest) return item;
-    // Compare by actual date and time
-    if (new Date(item.pubdate) > new Date(latest.pubdate)) return item;
-    return latest;
-  }, null);
+    // --- Find the latest news item by pubdate in this group ---
+    const latestNews = group.reduce((latest, item) => {
+      if (!latest) return item;
+      if (new Date(item.pubdate) > new Date(latest.pubdate)) return item;
+      return latest;
+    }, null);
 
-  // --- Render cards, only the news with latest pubdate gets 'Breaking' badge ---
-  group.forEach((item) => {
-    const img = getImg(item);
-    // Only the truly latest article in this group gets "Breaking"
-    const isBreaking = (latestNews && item.link === latestNews.link);
-    const breakingMark = isBreaking ? '<span class="badge">Breaking</span>' : '';
-    html += `<div class="news-card${isBreaking ? ' breaking' : ''}">
-      ${breakingMark}
-      ${img ? `<img class="news-img" src="${img}" loading="lazy" alt="news photo">` : ""}
-      <div class="news-content">
-        <a href="${item.link}" target="_blank">${item.title}</a>
-        <div style="font-size:0.85em; color:#666;">${formatPubDate(item.pubdate)}</div>
-        <div class="desc">${cleanDesc(item.description || item.content || "")}</div>
-      </div>
-    </div>`;
-  });
+    group.forEach((item) => {
+      const img = getImg(item);
+      // "Breaking" if within last 5 hours on current day
+      const isBreakingNews = isBreaking(item); // Use new function below
+      const breakingMark = isBreakingNews ? '<span class="badge">Breaking</span>' : '';
+      html += `<div class="news-card${isBreakingNews ? ' breaking' : ''}">
+        ${breakingMark}
+        ${img ? `<img class="news-img" src="${img}" loading="lazy" alt="news photo">` : ""}
+        <div class="news-content">
+          <a href="${item.link}" target="_blank">${item.title}</a>
+          <div style="font-size:0.85em; color:#666;">${formatPubDate(item.pubdate)}</div>
+          <div class="desc">${cleanDesc(item.description || item.content || "")}</div>
+        </div>
+      </div>`;
+    });
 
-  return html;
-}
+    return html;
+  }
 
-  // Which groups to render based on tab
   let html = '';
   if (selectedTab === "all") {
     html =
@@ -313,9 +243,6 @@ function renderSection(title, group) {
   document.getElementById("law-news").innerHTML = html;
 }
 
-/**
- * Rerender the full app (top carousel, news group, clear status)
- */
 function renderApp() {
   let topNews = filterNews(allNews, "").slice(0, 3);
   renderTopCarousel(topNews);
@@ -324,9 +251,6 @@ function renderApp() {
   setStatus(""); // Clear status
 }
 
-/**
- * Fetch all news from Supabase
- */
 async function getAllNews() {
   setStatus("Loading archive...");
   let { data: news, error } = await supabase
@@ -345,10 +269,6 @@ async function getAllNews() {
   renderApp();
 }
 
-/**
- * Insert latest news into database if not already present
- * De-duplicates by link
- */
 async function insertLatestNews(newsArray) {
   for (const item of newsArray) {
     let { data: existing } = await supabase
@@ -365,9 +285,6 @@ async function insertLatestNews(newsArray) {
   }
 }
 
-/**
- * Fetch feeds, store results, update full list (automated aggregation)
- */
 async function fetchAndStoreNews() {
   setStatus("Fetching latest news feeds...");
   try {
@@ -397,12 +314,10 @@ async function fetchAndStoreNews() {
   }
 }
 
-/* On page load, fetch all news and set up auto-refresh/feed */
 getAllNews();
 fetchAndStoreNews();
-setInterval(fetchAndStoreNews, 300000); // Refresh every 5 min
+setInterval(fetchAndStoreNews, 300000);
 
-// Search bar listener for instant filtering
 document.getElementById("searchBar").addEventListener("input", function () {
   currentSearch = this.value.trim().toLowerCase();
   renderApp();
@@ -412,17 +327,27 @@ document.getElementById("searchBar").addEventListener("input", function () {
    BREAKING NEWS LOGIC
    =============================== */
 /**
- * Returns true if article was published today
+ * Returns true if article was published within the last 5 hours today
  */
 function isBreaking(item) {
-  const today = new Date().toISOString().slice(0, 10);
-  return (item.pubdate && item.pubdate.startsWith(today));
+  if (!item.pubdate) return false;
+  const now = new Date();
+  const pub = new Date(item.pubdate);
+
+  // Only if published today
+  const today = now.toISOString().slice(0, 10);
+  const itemDate = pub.toISOString().slice(0, 10);
+  if (itemDate !== today) return false;
+
+  // Only if published within last 5 hours
+  const diffMs = now - pub;
+  const diffHours = diffMs / (1000 * 60 * 60);
+  return diffHours <= 5;
 }
 
 /* ===============================
    WEB PUSH & PWA LOGIC
    =============================== */
-// Browser Notification for new legal news
 if ("Notification" in window && Notification.permission !== "denied") {
   Notification.requestPermission().then(permission => {
     if (permission === "granted") {
@@ -433,8 +358,6 @@ if ("Notification" in window && Notification.permission !== "denied") {
     }
   });
 }
-
-// Register service worker for PWA/offline mode
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('service-worker.js')
     .then(() => console.log("Service Worker Registered!"))
