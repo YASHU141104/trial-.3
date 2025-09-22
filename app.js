@@ -363,3 +363,36 @@ if ('serviceWorker' in navigator) {
     .then(() => console.log("Service Worker Registered!"))
     .catch(err => console.error("Service Worker Registration Failed:", err));
 }
+
+document.querySelectorAll('.summary-btn').forEach(btn => {
+  btn.addEventListener('click', async function() {
+    const summaryP = this.previousElementSibling;
+    if (summaryP.style.display === "block") {
+      summaryP.style.display = "none";
+      this.textContent = "🧠 Show AI Summary";
+      return;
+    }
+    this.textContent = "Loading summary...";
+    this.disabled = true;
+    try {
+      // Example: use article title for demo; replace with actual text for real implementation
+      const articleTitle = this.parentElement.querySelector('h3').innerText;
+      // Send request to your backend
+      const response = await fetch('https://your-backend.com/api/summary', {
+        method: "POST",
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          articleText: articleTitle,
+          prompt: "Summarize in 2 sentences and explain for non-lawyers"
+        })
+      });
+      const data = await response.json();
+      summaryP.textContent = data.summary || "Could not generate summary.";
+    } catch (e) {
+      summaryP.textContent = "Error generating summary.";
+    }
+    summaryP.style.display = "block";
+    this.textContent = "Hide Summary";
+    this.disabled = false;
+  });
+});
