@@ -69,7 +69,7 @@ body.dark-mode {
 /* Navigation Bar */
 .navbar {
   background: #244e86;
-  padding: 0.5em 5em;
+  padding: 0.5em 1em;
   position: sticky; top: 0; z-index: 9;
   display: flex; align-items: center; gap: 1.5em;
 }
@@ -91,12 +91,6 @@ body.dark-mode {
 .tab-btn.active, .tab-btn:focus {
   background: #244e86; color: #fff;
   outline: none;
-}
-
-.navbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between; /* Spread out tabs and dark mode button */
 }
 
 /* High Court sub-tabs (show only if active) */
