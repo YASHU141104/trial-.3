@@ -1,21 +1,32 @@
-
 /* ===============================
    DARK MODE LOGIC
-=============================== */
+   =============================== */
+// Get dark mode button
 const darkBtn = document.getElementById("darkToggleBtn");
+
+/**
+ * Enable or disable dark mode, also set localStorage for preference
+ * @param {boolean} state - true for dark, false for light
+ */
 function setDarkMode(state) {
   document.body.classList.toggle("dark-mode", state);
   localStorage.setItem("dark-mode", state ? "1" : "");
   darkBtn.textContent = state ? "Light Mode" : "Dark Mode";
 }
+
+// Toggle dark mode on button click
 darkBtn.onclick = () => setDarkMode(!document.body.classList.contains("dark-mode"));
-(()=>{
-  if(localStorage.getItem("dark-mode")) setDarkMode(true);
+
+// On page load, restore user's dark mode preference from localStorage
+(() => {
+  if (localStorage.getItem("dark-mode")) setDarkMode(true);
 })();
 
 /* ===============================
    TABS & CATEGORY HANDLING
-=============================== */
+   =============================== */
+
+// List of Indian High Courts for filtering
 const highCourtList = [
   { name: "Allahabad High Court" }, { name: "Andhra Pradesh High Court" }, { name: "Bombay High Court" },
   { name: "Calcutta High Court" }, { name: "Chhattisgarh High Court" }, { name: "Delhi High Court" },
@@ -27,41 +38,58 @@ const highCourtList = [
   { name: "Rajasthan High Court" }, { name: "Sikkim High Court" }, { name: "Telangana High Court" },
   { name: "Tripura High Court" }, { name: "Uttarakhand High Court" }
 ];
+
+// Track selected tab/category (all/supreme/high/other) and High Court filter
 let selectedTab = "all";
 let selectedHC = null;
-function setTab(cat, hcName=null) {
+
+/**
+ * Set active tab/category and optionally High Court filter
+ * Rerenders relevant tabs and news
+ */
+function setTab(cat, hcName = null) {
   selectedTab = cat;
-  selectedHC = cat==="high" ? hcName : null;
-  document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.toggle("active", btn.dataset.category===cat));
-  renderHighCourtTabs(cat==="high"?hcName:null);
+  selectedHC = cat === "high" ? hcName : null;
+  document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.toggle("active", btn.dataset.category === cat));
+  renderHighCourtTabs(cat === "high" ? hcName : null);
   renderApp();
 }
-function renderHighCourtTabs(active=null) {
+
+/**
+ * Render High Court sub-tabs (only when "High Court" tab is active)
+ * Allows users to filter by individual high courts
+ */
+function renderHighCourtTabs(active = null) {
   const hctabs = document.getElementById("highCourtTabs");
-  if(selectedTab!=="high") { hctabs.style.display = "none"; return; }
-  hctabs.style.display='flex';
+  if (selectedTab !== "high") { hctabs.style.display = "none"; return; }
+  hctabs.style.display = 'flex';
   let html = '';
   highCourtList.forEach(hc => {
-    html += `<button class="hc-btn${active===hc.name?' active':''}" data-hc="${hc.name}">${hc.name}</button>`;
+    html += `<button class="hc-btn${active === hc.name ? ' active' : ''}" data-hc="${hc.name}">${hc.name}</button>`;
   });
   hctabs.innerHTML = html;
-  hctabs.querySelectorAll(".hc-btn").forEach(btn=>
-    btn.onclick = ()=>{
-      setTab("high",btn.dataset.hc);
+  hctabs.querySelectorAll(".hc-btn").forEach(btn =>
+    btn.onclick = () => {
+      setTab("high", btn.dataset.hc);
     }
   );
 }
-document.getElementById("categoryTabs").querySelectorAll(".tab-btn").forEach(btn=>
-  btn.onclick=()=>setTab(btn.dataset.category)
+
+// Add event listeners to top category tabs/buttons
+document.getElementById("categoryTabs").querySelectorAll(".tab-btn").forEach(btn =>
+  btn.onclick = () => setTab(btn.dataset.category)
 );
 
 /* ===============================
    DATA FETCHING & APP LOGIC
-=============================== */
-// SUPABASE: Set your Supabase URL and key
+   =============================== */
+
+// Supabase Configuration
 const supabase_url = "https://xddssiompemprjbnxxlf.supabase.co";
 const supabase_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhkZHNzaW9tcGVtcHJqYm54eGxmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgyMDczNzcsImV4cCI6MjA3Mzc4MzM3N30.QHjF8xdFYp6ex1YW2XV6GkKvPZXNp1biImoQIZdSMG4";
 const supabase = window.supabase.createClient(supabase_url, supabase_key);
+
+// List of legal news RSS feeds
 const feeds = [
   { url: "https://www.barandbench.com/feed" },
   { url: "https://www.livelaw.in/rss/law" },
@@ -70,23 +98,35 @@ const feeds = [
   { url: "https://lawbeat.in/rss.xml" },
   { url: "https://www.latestlaws.com/feed/" }
 ];
-const rss2json = (url) =>
-  `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(url)}`;
-let allNews = [];
-let currentSearch = "";
+const rss2json = (url) => `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(url)}`;
 
-// Show a status message
+let allNews = [];      // List of all articles fetched/loaded
+let currentSearch = ""; // Current value from search input
+
+/**
+ * Set status message for user feedback (centered above carousel)
+ */
 function setStatus(msg) {
   document.getElementById("statusMsg").textContent = msg || "";
 }
+
+/**
+ * Clean and truncate article description text
+ */
 function cleanDesc(desc) {
   if (!desc) return "";
   const text = desc.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
   return text.length > 180 ? text.slice(0, 180) + "..." : text;
 }
+/**
+ * Returns image URL for a news item, if any
+ */
 function getImg(item) {
   return item.thumbnail || (item.enclosure && item.enclosure.link) || "";
 }
+/**
+ * Filter news to just this week's stories (used for carousel and main filter)
+ */
 function getWeekStories(news) {
   const now = new Date();
   const sevenDaysAgo = new Date(now);
@@ -99,11 +139,18 @@ function getWeekStories(news) {
     return d >= startDate && d < endDate;
   });
 }
+/**
+ * Format publication date for display
+ */
 function formatPubDate(pubdate) {
   if (!pubdate) return "";
   let d = new Date(pubdate);
   return d.toLocaleString();
 }
+
+/**
+ * Renders featured top stories carousel
+ */
 function renderTopCarousel(topStories) {
   const container = document.getElementById("top-carousel");
   if (!topStories || !topStories.length) {
@@ -135,6 +182,7 @@ function renderTopCarousel(topStories) {
     `;
   }
   showSlide(slideIdx);
+  // Cycle if multiple top stories available
   if (topStories.length > 1) {
     setInterval(() => {
       slideIdx = (slideIdx + 1) % topStories.length;
@@ -142,35 +190,40 @@ function renderTopCarousel(topStories) {
     }, 50000);
   }
 }
+
+/**
+ * Main news filter logic, supports tab selection and instant search
+ */
 function filterNews(all, searchStr) {
-  // 1. week filter
+  // 1. Only keep this week's news
   let weekNews = getWeekStories(all);
+
   // 2. Tabs: by category & High Court
   let filtered = weekNews;
-  if(selectedTab==="supreme") {
-    filtered = filtered.filter(item=> 
-      (item.title||"").toLowerCase().includes("supreme court")
+  if (selectedTab === "supreme") {
+    filtered = filtered.filter(item =>
+      (item.title || "").toLowerCase().includes("supreme court")
     );
   }
-  else if(selectedTab==="high") {
-    filtered = filtered.filter(item=> 
-      (item.title||"").toLowerCase().includes("high court")
+  else if (selectedTab === "high") {
+    filtered = filtered.filter(item =>
+      (item.title || "").toLowerCase().includes("high court")
     );
-    if(selectedHC) {
-      filtered = filtered.filter(item=>
-        (item.title||"").toLowerCase().includes(selectedHC.toLowerCase())
+    if (selectedHC) {
+      filtered = filtered.filter(item =>
+        (item.title || "").toLowerCase().includes(selectedHC.toLowerCase())
       );
     }
   }
-  else if(selectedTab==="other") {
-    filtered = filtered.filter(item=>
-      !(item.title||"").toLowerCase().includes("high court") &&
-      !(item.title||"").toLowerCase().includes("supreme court")
+  else if (selectedTab === "other") {
+    filtered = filtered.filter(item =>
+      !(item.title || "").toLowerCase().includes("high court") &&
+      !(item.title || "").toLowerCase().includes("supreme court")
     );
   }
-  // 3. Search if set
-  if(searchStr) {
-    if(/^\d{4}-\d{2}-\d{2}$/.test(searchStr)) {
+  // 3. Search by date or keyword
+  if (searchStr) {
+    if (/^\d{4}-\d{2}-\d{2}$/.test(searchStr)) {
       filtered = filtered.filter((item) => {
         if (!item.pubdate) return false;
         const d = new Date(item.pubdate);
@@ -185,12 +238,16 @@ function filterNews(all, searchStr) {
       );
     }
   }
+  // Sort newest first
   return filtered.sort((a, b) => new Date(b.pubdate) - new Date(a.pubdate));
 }
+
+/**
+ * Renders grouped news (by Supreme/High/Other) depending on filters/tabs
+ * Uses HTML5 semantic sections
+ */
 function renderGroupedNews(news) {
-  let articles = [],
-    supreme_court_cases = [],
-    high_court_cases = [];
+  let articles = [], supreme_court_cases = [], high_court_cases = [];
   news.forEach((item) => {
     const h = (item.title || "").toLowerCase();
     if (h.includes("supreme court")) {
@@ -201,45 +258,52 @@ function renderGroupedNews(news) {
       articles.push(item);
     }
   });
+
+  /**
+   * Helper: Render HTML for one section
+   */
   function renderSection(title, group) {
     if (!group.length) return "";
     let html = `<h2>${title}</h2>`;
     group.forEach((item) => {
       const img = getImg(item);
-      html += `<div class="news-card">
-        ${
-          img
-            ? `<img class="news-img" src="${img}" loading="lazy" alt="news photo">`
-            : ""
-        }
+      // Badge for breaking news
+      const breakingMark = isBreaking(item) ? '<span class="badge">Breaking</span>' : '';
+      html += `<div class="news-card${isBreaking(item) ? ' breaking' : ''}">
+        ${breakingMark}
+        ${img ? `<img class="news-img" src="${img}" loading="lazy" alt="news photo">` : ""}
         <div class="news-content">
           <a href="${item.link}" target="_blank">${item.title}</a>
-          <div style="font-size:0.85em; color:#666;">${formatPubDate(
-            item.pubdate
-          )}</div>
+          <div style="font-size:0.85em; color:#666;">${formatPubDate(item.pubdate)}</div>
           <div class="desc">${cleanDesc(item.description || item.content || "")}</div>
         </div>
       </div>`;
     });
     return html;
   }
+
+  // Which groups to render based on tab
   let html = '';
-  if(selectedTab==="all") {
+  if (selectedTab === "all") {
     html =
       renderSection("Supreme Court Cases", supreme_court_cases) +
       renderSection("High Court Cases", high_court_cases) +
       renderSection("Other Articles", articles);
   } else {
     html = renderSection(
-      selectedTab==="supreme" ? "Supreme Court Cases"
-      : selectedTab==="high" ? (selectedHC?selectedHC+" News":"High Court Cases")
-      : "Other Articles",
+      selectedTab === "supreme" ? "Supreme Court Cases"
+        : selectedTab === "high" ? (selectedHC ? selectedHC + " News" : "High Court Cases")
+          : "Other Articles",
       news
     );
   }
   if (!html.trim()) html = "<p>No news found for your selection.</p>";
   document.getElementById("law-news").innerHTML = html;
 }
+
+/**
+ * Rerender the full app (top carousel, news group, clear status)
+ */
 function renderApp() {
   let topNews = filterNews(allNews, "").slice(0, 3);
   renderTopCarousel(topNews);
@@ -247,6 +311,10 @@ function renderApp() {
   renderGroupedNews(filtered);
   setStatus(""); // Clear status
 }
+
+/**
+ * Fetch all news from Supabase
+ */
 async function getAllNews() {
   setStatus("Loading archive...");
   let { data: news, error } = await supabase
@@ -264,6 +332,11 @@ async function getAllNews() {
   allNews = news;
   renderApp();
 }
+
+/**
+ * Insert latest news into database if not already present
+ * De-duplicates by link
+ */
 async function insertLatestNews(newsArray) {
   for (const item of newsArray) {
     let { data: existing } = await supabase
@@ -279,6 +352,10 @@ async function insertLatestNews(newsArray) {
     }
   }
 }
+
+/**
+ * Fetch feeds, store results, update full list (automated aggregation)
+ */
 async function fetchAndStoreNews() {
   setStatus("Fetching latest news feeds...");
   try {
@@ -307,41 +384,32 @@ async function fetchAndStoreNews() {
     document.getElementById("law-news").innerHTML = "Failed: " + e;
   }
 }
+
+/* On page load, fetch all news and set up auto-refresh/feed */
 getAllNews();
 fetchAndStoreNews();
-setInterval(fetchAndStoreNews, 300000);
+setInterval(fetchAndStoreNews, 300000); // Refresh every 5 min
+
+// Search bar listener for instant filtering
 document.getElementById("searchBar").addEventListener("input", function () {
   currentSearch = this.value.trim().toLowerCase();
   renderApp();
 });
 
-// Determine if a news item is 'breaking' (published today)
+/* ===============================
+   BREAKING NEWS LOGIC
+   =============================== */
+/**
+ * Returns true if article was published today
+ */
 function isBreaking(item) {
-  const today = new Date().toISOString().slice(0,10);
+  const today = new Date().toISOString().slice(0, 10);
   return (item.pubdate && item.pubdate.startsWith(today));
 }
 
-// In your renderSection or where you build news cards:
-function renderSection(title, group) {
-  if (!group.length) return "";
-  let html = `<h2>${title}</h2>`;
-  group.forEach((item) => {
-    const img = getImg(item);
-    // Badge for breaking news
-    const breakingMark = isBreaking(item) ? '<span class="badge">Breaking</span>' : '';
-    html += `<div class="news-card${isBreaking(item) ? ' breaking' : ''}">
-      ${breakingMark}
-      ${img ? `<img class="news-img" src="${img}" loading="lazy" alt="news photo">` : ""}
-      <div class="news-content">
-        <a href="${item.link}" target="_blank">${item.title}</a>
-        <div style="font-size:0.85em; color:#666;">${formatPubDate(item.pubdate)}</div>
-        <div class="desc">${cleanDesc(item.description || item.content || "")}</div>
-      </div>
-    </div>`;
-  });
-  return html;
-}
-
+/* ===============================
+   WEB PUSH & PWA LOGIC
+   =============================== */
 // Browser Notification for new legal news
 if ("Notification" in window && Notification.permission !== "denied") {
   Notification.requestPermission().then(permission => {
@@ -353,13 +421,6 @@ if ("Notification" in window && Notification.permission !== "denied") {
     }
   });
 }
-// Register service worker for PWA/offline mode
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('service-worker.js')
-    .then(() => console.log("Service Worker Registered!"))
-    .catch(err => console.error("Service Worker Registration Failed:", err));
-}
-// ...your existing code...
 
 // Register service worker for PWA/offline mode
 if ('serviceWorker' in navigator) {
