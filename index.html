@@ -57,50 +57,5 @@
   <!-- ==================== APP & LOGIC ==================== -->
   <script src="app.js"></script>
 
-  <script>
-const prefersDarkScheme = window.matchMedia("(prefers-color-scheme: dark)");
-const toggleBtn = document.getElementById("darkModeToggle");
-
-// Function to set theme from preference
-function setThemeFromPreference() {
-  const stored = localStorage.getItem('darkMode');
-  if (stored !== null) {
-    document.body.classList.toggle('dark-mode', stored === 'true');
-  } else {
-    document.body.classList.toggle('dark-mode', prefersDarkScheme.matches);
-  }
-}
-
-// Toggling and storing user choice
-toggleBtn.addEventListener('click', function() {
-  const isDark = document.body.classList.toggle('dark-mode');
-  localStorage.setItem('darkMode', isDark);
-  updateButtonIcon();
-});
-
-// Update button icon/text for accessibility and user feedback
-function updateButtonIcon() {
-  if(document.body.classList.contains('dark-mode')) {
-    toggleBtn.innerHTML = "☀️ Light Mode";
-    toggleBtn.setAttribute('aria-pressed', "true");
-  } else {
-    toggleBtn.innerHTML = "🌙 Dark Mode";
-    toggleBtn.setAttribute('aria-pressed', "false");
-  }
-}
-
-// React to OS theme changes if user hasn't set a preference
-prefersDarkScheme.addEventListener('change', function(e) {
-  if (localStorage.getItem('darkMode') === null) {
-    document.body.classList.toggle('dark-mode', e.matches);
-    updateButtonIcon();
-  }
-});
-
-// On page load
-setThemeFromPreference();
-updateButtonIcon();
-</script>
-
 </body>
 </html>
