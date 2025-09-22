@@ -69,6 +69,11 @@ body.dark-mode {
   background: #244e86; color: #fff;
   outline: none;
 }
+.navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between; /* Spread out tabs and dark mode button */
+}
 
 /* High Court sub-tabs (show only if active) */
 .hc-tabs {
